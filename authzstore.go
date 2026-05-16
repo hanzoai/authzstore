@@ -217,6 +217,46 @@ func (a *Adapter) RemovePolicy(_ string, ptype string, rule []string) error {
 	return err
 }
 
+// AddPolicies inserts a batch of rules in a single transaction.
+// Satisfies persist.BatchAdapter so casbin's initAdminPermission and
+// bulk-policy loads don't panic with "missing method AddPolicies".
+func (a *Adapter) AddPolicies(_ string, ptype string, rules [][]string) error {
+	if len(rules) == 0 {
+		return nil
+	}
+	rows := make([]any, 0, len(rules))
+	for _, rule := range rules {
+		rows = append(rows, newRow(ptype, rule))
+	}
+	s := a.session()
+	defer s.Close()
+	_, err := s.Insert(rows...)
+	return err
+}
+
+// RemovePolicies removes a batch of rules in a single transaction. Each
+// rule is matched on the full (ptype, v0..v5) tuple — same semantics as
+// RemovePolicy.
+func (a *Adapter) RemovePolicies(_ string, ptype string, rules [][]string) error {
+	if len(rules) == 0 {
+		return nil
+	}
+	s := a.session()
+	defer s.Close()
+	for _, rule := range rules {
+		row := newRow(ptype, rule)
+		if _, err := s.MustCols("ptype", "v0", "v1", "v2", "v3", "v4", "v5").Delete(row); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// Compile-time assertion: Adapter satisfies persist.BatchAdapter so
+// downstream consumers (iam initAdminPermission, bulk loaders) never
+// panic at runtime with "missing method AddPolicies".
+var _ persist.BatchAdapter = (*Adapter)(nil)
+
 // RemoveFilteredPolicy removes rules whose V[i..i+len(fieldValues)-1]
 // columns match the supplied values. The semantics mirror the
 // xorm-adapter so consumers see identical behavior.
