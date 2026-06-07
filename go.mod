@@ -1,6 +1,6 @@
 module github.com/hanzoai/authzstore
 
-go 1.26.3
+go 1.26.4
 
 require (
 	github.com/hanzoai/authz v1.10.0
