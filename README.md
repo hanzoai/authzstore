@@ -1,3 +1,5 @@
+<p align="center"><img src=".github/hero.svg" alt="authzstore" width="880"></p>
+
 # authzstore
 
 Hanzo's xorm-backed adapter for [hanzoai/authz](https://github.com/hanzoai/authz)
