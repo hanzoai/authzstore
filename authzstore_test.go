@@ -15,7 +15,7 @@ import (
 
 	authzmodel "github.com/hanzoai/authz/model"
 	"github.com/hanzoai/xorm"
-	_ "modernc.org/sqlite"
+	_ "github.com/hanzoai/sqlite"
 )
 
 // testModel is the same model the IAM seeds for permission enforcers.
@@ -40,7 +40,7 @@ m = g(r.sub, p.sub) && r.obj == p.obj && r.act == p.act
 
 // newTestEngine spins up a temp-file SQLite engine.
 //
-// modernc.org/sqlite is registered as driver "sqlite" (note: not the
+// hanzoai/sqlite registers the driver name "sqlite" (note: not the
 // legacy mattn name "sqlite3"). Using a file-backed DB rather than
 // :memory: because xorm opens multiple connections under the hood and
 // each in-memory handle is a distinct database — Find() against an

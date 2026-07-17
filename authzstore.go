@@ -404,7 +404,7 @@ func loadPolicyRow(r *AuthzRule, model authzmodel.Model) {
 //
 //   - SQLite: SQLITE_MAX_VARIABLE_NUMBER — read at runtime from
 //     `pragma_compile_options`. Default 999 before 3.32, 32766 since.
-//     modernc.org/sqlite (our build) compiles with 32766.
+//     hanzoai/sqlite's pure-Go (modernc) backend compiles with 32766.
 //   - Postgres: bind-parameter limit is uint16 (~65535). 8000 rows ×
 //     8 cols = 64000 binds, safe.
 //   - MySQL: no hard parameter cap; max_allowed_packet is the limiter.
