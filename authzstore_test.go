@@ -14,7 +14,7 @@ import (
 	"testing"
 
 	authzmodel "github.com/hanzoai/authz/model"
-	"github.com/hanzoai/xorm"
+	"github.com/hanzoai/orm/relational"
 	_ "modernc.org/sqlite"
 )
 
@@ -45,12 +45,12 @@ m = g(r.sub, p.sub) && r.obj == p.obj && r.act == p.act
 // :memory: because xorm opens multiple connections under the hood and
 // each in-memory handle is a distinct database — Find() against an
 // inserted row from another connection would return empty.
-func newTestEngine(t *testing.T) *xorm.Engine {
+func newTestEngine(t *testing.T) *relational.Engine {
 	t.Helper()
 	// WAL + 5s busy_timeout matches the in-product hanzoai/sqlite config
 	// and keeps concurrent reader/writer tests from racing into BUSY.
 	path := filepath.Join(t.TempDir(), "authzstore.db?_pragma=journal_mode(WAL)&_pragma=busy_timeout(5000)")
-	e, err := xorm.NewEngine("sqlite", path)
+	e, err := relational.NewEngine("sqlite", path)
 	if err != nil {
 		t.Fatalf("open sqlite: %v", err)
 	}
