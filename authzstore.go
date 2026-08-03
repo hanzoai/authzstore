@@ -16,8 +16,9 @@
 //
 // It replaces github.com/hanzoai/xorm-adapter/v3 with a small, focused
 // store that operates directly against the existing on-disk schema
-// (table columns: ptype, v0, v1, v2, v3, v4, v5) via the hanzoai/xorm
-// engine already in use across the IAM. The table layout is unchanged
+// (table columns: ptype, v0, v1, v2, v3, v4, v5) via the relational engine
+// already in use across the IAM, reached through hanzoai/orm — the one ORM
+// namespace — rather than named directly. The table layout is unchanged
 // — both prod clusters carry data in `authz_user_rule` and
 // `authz_api_rule` and that physical schema is the contract.
 //
@@ -42,7 +43,7 @@ import (
 
 	authzmodel "github.com/hanzoai/authz/model"
 	"github.com/hanzoai/authz/persist"
-	"github.com/hanzoai/xorm"
+	"github.com/hanzoai/orm/relational"
 )
 
 // validTableName matches SQL identifier shape: leading letter or
@@ -82,11 +83,11 @@ type Filter struct {
 	V5    []string
 }
 
-// Adapter is the hanzoai/authz adapter backed by a hanzoai/xorm engine
+// Adapter is the hanzoai/authz adapter backed by a hanzoai/orm relational engine
 // pointed at the table named by `table` (already-prefixed if the
 // deployment uses a tableNamePrefix).
 type Adapter struct {
-	engine     *xorm.Engine
+	engine     *relational.Engine
 	table      string // fully-qualified table name (prefix already applied)
 	isFiltered bool
 }
@@ -102,7 +103,7 @@ type Adapter struct {
 // xorm-adapter behavior the IAM has historically relied on for first
 // boot; production deployments already have the rows so the CREATE is
 // a no-op there.
-func New(engine *xorm.Engine, tableName, tablePrefix string) (*Adapter, error) {
+func New(engine *relational.Engine, tableName, tablePrefix string) (*Adapter, error) {
 	if engine == nil {
 		return nil, errors.New("authzstore: nil xorm engine")
 	}
@@ -132,7 +133,7 @@ func (a *Adapter) ensureTable() error {
 
 // session opens a new xorm session bound to this adapter's table.
 // Callers are responsible for closing the session.
-func (a *Adapter) session() *xorm.Session {
+func (a *Adapter) session() *relational.Session {
 	s := a.engine.NewSession()
 	return s.Table(a.table)
 }
@@ -177,7 +178,7 @@ func (a *Adapter) SavePolicy(model authzmodel.Model) error {
 
 	batchSize := a.insertBatchSize()
 
-	_, err := a.engine.Transaction(func(tx *xorm.Session) (interface{}, error) {
+	_, err := a.engine.Transaction(func(tx *relational.Session) (interface{}, error) {
 		if _, err := tx.Exec("DELETE FROM " + a.table); err != nil {
 			return nil, err
 		}
@@ -315,7 +316,7 @@ func (a *Adapter) IsFiltered() bool { return a.isFiltered }
 
 // applyFilter narrows s to rows where each column in the filter matches.
 // An empty slice for a column means "no constraint".
-func applyFilter(s *xorm.Session, f Filter) {
+func applyFilter(s *relational.Session, f Filter) {
 	cols := [...]struct {
 		col  string
 		vals []string

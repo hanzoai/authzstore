@@ -16,7 +16,7 @@ import (
 	"time"
 
 	authzmodel "github.com/hanzoai/authz/model"
-	"github.com/hanzoai/xorm"
+	"github.com/hanzoai/orm/relational"
 )
 
 // TestVerify_AtomicSavePolicy_NoDenyAllWindow: pre-seed 1000 rules, then
@@ -213,7 +213,7 @@ func TestVerify_Sync2_NoOpAgainstProdDDL(t *testing.T) {
 	}
 }
 
-func dumpColumnCount(t *testing.T, e *xorm.Engine, table string) int {
+func dumpColumnCount(t *testing.T, e *relational.Engine, table string) int {
 	t.Helper()
 	res, err := e.Query(fmt.Sprintf("PRAGMA table_info(%s)", table))
 	if err != nil {
@@ -222,7 +222,7 @@ func dumpColumnCount(t *testing.T, e *xorm.Engine, table string) int {
 	return len(res)
 }
 
-func dumpIndexCount(t *testing.T, e *xorm.Engine, table string) int {
+func dumpIndexCount(t *testing.T, e *relational.Engine, table string) int {
 	t.Helper()
 	res, err := e.Query(fmt.Sprintf("PRAGMA index_list(%s)", table))
 	if err != nil {
@@ -231,7 +231,7 @@ func dumpIndexCount(t *testing.T, e *xorm.Engine, table string) int {
 	return len(res)
 }
 
-func dumpRowCount(t *testing.T, e *xorm.Engine, table string) int {
+func dumpRowCount(t *testing.T, e *relational.Engine, table string) int {
 	t.Helper()
 	res, err := e.Query(fmt.Sprintf("SELECT COUNT(*) AS c FROM %s", table))
 	if err != nil {
