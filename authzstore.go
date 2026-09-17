@@ -178,15 +178,12 @@ func (a *Adapter) SavePolicy(model authzmodel.Model) error {
 
 	batchSize := a.insertBatchSize()
 
-	_, err := a.engine.Transaction(func(tx *relational.Session) (interface{}, error) {
+	_, err := a.engine.Transaction(func(tx *relational.Session) (any, error) {
 		if _, err := tx.Exec("DELETE FROM " + a.table); err != nil {
 			return nil, err
 		}
 		for i := 0; i < len(rows); i += batchSize {
-			j := i + batchSize
-			if j > len(rows) {
-				j = len(rows)
-			}
+			j := min(i+batchSize, len(rows))
 			batch := rows[i:j]
 			if _, err := tx.Table(a.table).Insert(&batch); err != nil {
 				return nil, err
@@ -290,7 +287,7 @@ func (a *Adapter) RemoveFilteredPolicy(_ string, ptype string, fieldIndex int, f
 }
 
 // LoadFilteredPolicy loads only rows matching the given Filter.
-func (a *Adapter) LoadFilteredPolicy(model authzmodel.Model, filter interface{}) error {
+func (a *Adapter) LoadFilteredPolicy(model authzmodel.Model, filter any) error {
 	f, ok := filter.(Filter)
 	if !ok {
 		return errors.New("authzstore: filter must be authzstore.Filter")

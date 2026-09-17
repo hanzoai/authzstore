@@ -37,7 +37,7 @@ func TestVerify_AtomicSavePolicy_NoDenyAllWindow(t *testing.T) {
 	if err != nil {
 		t.Fatalf("model: %v", err)
 	}
-	for i := 0; i < 100; i++ {
+	for i := range 100 {
 		_ = seed["p"]["p"].Policy
 		row := []string{
 			fmt.Sprintf("user-%d", i), "data", "read", "allow", "", fmt.Sprintf("perm-%d", i),
@@ -51,7 +51,7 @@ func TestVerify_AtomicSavePolicy_NoDenyAllWindow(t *testing.T) {
 	// distinguish pre/post rewrite states, small enough that each
 	// SavePolicy completes in ms under -race.
 	bigModel, _ := authzmodel.NewModelFromString(testModel)
-	for i := 0; i < 200; i++ {
+	for i := range 200 {
 		bigModel["p"]["p"].Policy = append(bigModel["p"]["p"].Policy, []string{
 			fmt.Sprintf("u-%d", i), "obj", "act", "allow", "", fmt.Sprintf("p-%d", i),
 		})
@@ -69,9 +69,7 @@ func TestVerify_AtomicSavePolicy_NoDenyAllWindow(t *testing.T) {
 	var wg sync.WaitGroup
 
 	// Writer: rewrite the policy in a loop.
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
+	wg.Go(func() {
 		for !stop.Load() {
 			if err := a.SavePolicy(bigModel); err != nil {
 				t.Errorf("SavePolicy: %v", err)
@@ -79,12 +77,10 @@ func TestVerify_AtomicSavePolicy_NoDenyAllWindow(t *testing.T) {
 			}
 			writes.Add(1)
 		}
-	}()
+	})
 
 	// Reader: load the policy in a loop, count empty observations.
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
+	wg.Go(func() {
 		for !stop.Load() {
 			m, _ := authzmodel.NewModelFromString(testModel)
 			if err := a.LoadPolicy(m); err != nil {
@@ -103,7 +99,7 @@ func TestVerify_AtomicSavePolicy_NoDenyAllWindow(t *testing.T) {
 				}
 			}
 		}
-	}()
+	})
 
 	time.Sleep(3 * time.Second)
 	stop.Store(true)
@@ -174,7 +170,7 @@ func TestVerify_Sync2_NoOpAgainstProdDDL(t *testing.T) {
 	}
 
 	// Seed 77 rows (matching prod row count on both clusters).
-	for i := 0; i < 77; i++ {
+	for i := range 77 {
 		if _, err := eng.Exec(
 			`INSERT INTO authz_api_rule (ptype, v0, v1, v2, v3, v4, v5) VALUES (?, ?, ?, ?, ?, ?, ?)`,
 			"p", fmt.Sprintf("u-%d", i), "obj", "read", "allow", "", fmt.Sprintf("perm-%d", i),
