@@ -226,9 +226,12 @@ func (a *Adapter) AddPolicies(_ string, ptype string, rules [][]string) error {
 	for _, rule := range rules {
 		rows = append(rows, newRow(ptype, rule))
 	}
-	s := a.session()
-	defer s.Close()
-	_, err := s.Insert(rows...)
+	_, err := a.engine.Transaction(func(tx *relational.Session) (any, error) {
+		if _, err := tx.Table(a.table).Insert(rows...); err != nil {
+			return nil, err
+		}
+		return nil, nil
+	})
 	return err
 }
 
@@ -239,15 +242,16 @@ func (a *Adapter) RemovePolicies(_ string, ptype string, rules [][]string) error
 	if len(rules) == 0 {
 		return nil
 	}
-	s := a.session()
-	defer s.Close()
-	for _, rule := range rules {
-		row := newRow(ptype, rule)
-		if _, err := s.MustCols("ptype", "v0", "v1", "v2", "v3", "v4", "v5").Delete(row); err != nil {
-			return err
+	_, err := a.engine.Transaction(func(tx *relational.Session) (any, error) {
+		for _, rule := range rules {
+			row := newRow(ptype, rule)
+			if _, err := tx.Table(a.table).MustCols("ptype", "v0", "v1", "v2", "v3", "v4", "v5").Delete(row); err != nil {
+				return nil, err
+			}
 		}
-	}
-	return nil
+		return nil, nil
+	})
+	return err
 }
 
 // Compile-time assertion: Adapter satisfies persist.BatchAdapter so
